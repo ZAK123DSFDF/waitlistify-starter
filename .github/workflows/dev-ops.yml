@@ -1,0 +1,78 @@
+name: DevOps & Deployment Workflow
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "drizzle/**"
+      - "src/**"
+      - "public/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "wrangler.toml"
+  workflow_dispatch:
+    inputs:
+      drop_tables:
+        description: "Drop all tables using CASCADE?"
+        type: boolean
+        default: false
+      reset_tables:
+        description: "Clear existing table data (TRUNCATE/DELETE)?"
+        type: boolean
+        default: false
+      run_seed:
+        description: "Run DB Seeder?"
+        type: boolean
+        default: false
+
+jobs:
+  dev-ops:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Drop All Tables (Manual Only)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.drop_tables == true }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm run db:drop
+
+      - name: Clear Existing Table Data (Manual Only)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.reset_tables == true }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm run db:reset
+
+      - name: Apply Migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm drizzle-kit migrate
+
+      - name: Seed Database (Manual Only)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_seed == true }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm run db:seed
+
+      - name: Build Application
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm build
+
+      - name: Deploy to Cloudflare
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --keep-vars

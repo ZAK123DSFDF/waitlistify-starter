@@ -1,0 +1,20 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "waitlistify"
+main = "./src/server.ts"
+compatibility_date = "2026-01-01"
+compatibility_flags = [ "nodejs_compat"]
+
+
+# Tell Wrangler where TanStack Start outputs your static assets (optimized)
+[assets]
+directory = "./.output/public/"
+
+preview_urls = false
+
+[alias]
+"tslib" = "tslib"
+
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "<YOUR_HYPERDRIVE_ID>"
+localConnectionString = "postgresql://user:password@host/dbname?sslmode=require"
