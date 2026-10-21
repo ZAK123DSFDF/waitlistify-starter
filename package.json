@@ -23,7 +23,7 @@
     "db:seed": "tsx src/db/seed.ts",
     "db:reset": "tsx src/db/seed.ts --reset",
     "db:drop": "tsx src/db/seed.ts --drop",
-    "db:drop:all": "tsx drop-all.ts",
+    "db:drop:all": "tsx --env-file=.env.local drop-all.ts",
     "db:fresh": "tsx src/db/seed.ts --fresh",
     "tag-paths": "tsx scripts/add-path-comments.ts",
     "env:example": "tsx scripts/generate-env-example.ts"
